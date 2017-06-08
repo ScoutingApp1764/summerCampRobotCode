@@ -16,6 +16,7 @@
 
 //for me later: https://www.vexforum.com/index.php/18408-gears-slipping/0
 //replace the axel on the crappy wheel. it could be bent. otherwise, it's structural. 
+//make the turn decider add the result of both ultrasonic checks and the light sensor check, if 2/3 are positive then turn
 
 enum material
 {
