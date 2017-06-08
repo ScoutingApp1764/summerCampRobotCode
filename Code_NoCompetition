@@ -12,7 +12,10 @@
 #define TURN_DISTANCE_CENTER 100
 #define TURN_DISTANCE_FORWARD 10
 //#define MAX_ADDITIONAL_CENTER_WALL_DISTANCE 25
-#define BEAR_SPEED_DIFFERENCE 25
+#define BEAR_SPEED_DIFFERENCE 10 //how hard it will adjust
+
+//for me later: https://www.vexforum.com/index.php/18408-gears-slipping/0
+//replace the axel on the crappy wheel. it could be bent. otherwise, it's structural. 
 
 enum material
 {
@@ -87,20 +90,23 @@ void autonomous_code(bool semiauto)
 {
 	if (semiauto)
 	{
-		if (vexRT[BUTTON NAME HERE] == 1)
-		{
-			driverControl = !driverControl;
-		}	
-		if (vexRT[BN] == 1)
-		{
-			servoPosition++;
-		}
-		if (vexRT[BN] == 1)
-		{
-			servoPosition--;
-		}
 		if (driverControl)
 		{
+			if (vexRT[BUTTON NAME HERE] == 1)
+			{
+				driverControl = false;
+				currentTask = goStraight;
+				//do not clear the timer in case it needs to turn
+				return;
+			}
+			if (vexRT[BN] == 1)
+			{
+				servoPosition++;
+			}
+			if (vexRT[BN] == 1)
+			{
+				servoPosition--;
+			}
 			motor[left1] = vexRT[Ch2];
 			motor[left2] = vexRT[Ch2];
 			motor[right1] = vexRT[Ch3];
@@ -113,6 +119,18 @@ void autonomous_code(bool semiauto)
 
 			return;
 		}
+		else 
+		{
+			if (vexRT[BUTTON NAME HERE] == 1)
+			{
+				driverControl = true;
+			}
+			if (vexRT[BN] == 1) //if the button for changing the center-wall distance is held
+			{
+				targetCenterDistance = (vexRT[Ch2]/(127/90)) //adjust the analog stick input to actual distance on field
+			}
+		}
+			
 	}
 	if ( currentTask == goStraight)
 	{
@@ -146,12 +164,13 @@ void autonomous_code(bool semiauto)
 			}
 		}
 		
+		//The idea behind this is that the robot will constantly adjust to keep in the center. It will constantly be turning slightly. The bigger the gap in where it should be, the harsher the veer.
 		if (straightBearDirection == left)
 		{
 			
 			
-			motor[left1] = 127-BEAR_SPEED_DIFFERENCE;
-			motor[left2] = 127-BEAR_SPEED_DIFFERENCE;
+			motor[left1] = 127-((targetCenterDistance-centerDistance)/BEAR_SPEED_DIFFERENCE);
+			motor[left2] = 127-((targetCenterDistance-centerDistance)/BEAR_SPEED_DIFFERENCE);
 			motor[right1] = 127;
 			motor[right2] = 127;
 		}
@@ -159,8 +178,8 @@ void autonomous_code(bool semiauto)
 		{
 			motor[left1] = 127;
 			motor[left2] = 127;
-			motor[right1] = 127-BEAR_SPEED_DIFFERENCE;
-			motor[right2] = 127-BEAR_SPEED_DIFFERENCE;
+			motor[right1] = 127-((centerDistance-targetCenterDistance)/BEAR_SPEED_DIFFERENCE);
+			motor[right2] = 127-((centerDistance-targetCenterDistance)/BEAR_SPEED_DIFFERENCE);
 		}
 		
 			
@@ -202,6 +221,7 @@ void autonomous_code(bool semiauto)
 		motor[right2] = 127;
 
 		waitInMiliseconds(3000);
+		currentTask = stopRemovingBalls;
 	}
 	else if (currentTask == stopRemovingBalls)
 	{
@@ -212,6 +232,7 @@ void autonomous_code(bool semiauto)
 
 
 		waitInMiliseconds(2000);
+		currentTask = goStraight;
 	}
 	else if (currentTask == moveOutOfStart)
 	{
@@ -221,13 +242,13 @@ void autonomous_code(bool semiauto)
 		motor[right2] = 127;
 
 		waitInMiliseconds(3000);
+		currentTask = goStraight;
 	}
+	/*
+	else if (currentTask == makeTea) TODO
+	*/
 }
 
-void ManuallyResetAuto()
-{
-	currentTask = goStraight;
-}
 short readout;
 task main()
 { 
@@ -239,7 +260,7 @@ task main()
 	motor[right2] = vexRT[Ch2];*/
 	readout = SensorValue(centerWalllUltrasonic);
 	
-	autonomous_code(false);
+		autonomous_code(false);
 
 	}
 }
